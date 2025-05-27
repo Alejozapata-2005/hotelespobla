@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hoteles en El Poblado Medellín</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1d4ed8',
+            secondary: '#f59e0b',
+            accent: '#3b82f6',
+            gray: {
+              100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af',
+              500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827',
+            },
+          },
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Estilos para el modal de detalles del hotel (existente) */
+    .modal {
+      display: none; /* Oculto por defecto */
+      position: fixed;
+      z-index: 1000; /* Por encima de todo */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto; /* Permite scroll si el contenido es muy largo */
+      background-color: rgba(0,0,0,0.7); /* Fondo oscuro semitransparente */
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.open {
+      display: flex; /* Mostrar cuando esté abierto */
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto; /* Centrar el modal */
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%; /* Ancho responsivo */
+      max-width: 800px; /* Ancho máximo */
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      position: relative;
+      animation: fadeIn 0.3s ease-out; /* Animación de entrada */
+      max-height: 90vh; /* Altura máxima para permitir scroll */
+      overflow-y: auto; /* Scroll para el contenido del modal */
+    }
+    .close-button { /* Para modal de hotel */
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+    }
+    .close-button:hover,
+    .close-button:focus {
+      color: #333;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Estilos para el modal de la GALERÍA */
+    .gallery-modal {
+      display: none; /* Oculto por defecto */
+      position: fixed;
+      z-index: 1010; /* Más alto que el modal de hotel */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden; /* Evitar scroll en body cuando este modal está abierto */
+      background-color: rgba(0,0,0,0.85); /* Fondo más oscuro */
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .gallery-modal.open {
+      display: flex;
+    }
+    .gallery-modal-content {
+      background-color: transparent; /* El contenido es la imagen y el botón */
+      margin: auto;
+      padding: 0;
+      border-radius: 8px;
+      width: auto;
+      max-width: 90vw; /* Máximo ancho de la ventana */
+      max-height: 90vh; /* Máximo alto de la ventana */
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      position: relative;
+      text-align: center; /* Centrar botón debajo de la imagen */
+    }
+    #galleryModalImage {
+      max-width: 100%;
+      max-height: calc(85vh - 60px); /* Dejar espacio para el botón y padding */
+      object-fit: contain;
+      border-radius: 6px;
+      display: block; /* Para que el margen auto funcione */
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .gallery-modal-close-button { /* Para modal de galería */
+      color: #fff;
+      position: absolute;
+      top: -5px; /* Ajustar para que esté bien posicionado */
+      right: 5px;
+      font-size: 40px; /* Más grande y fácil de clickear */
+      font-weight: bold;
+      line-height: 1;
+      transition: color 0.3s ease;
+      cursor: pointer;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .gallery-modal-close-button:hover {
+      color: #ccc;
+    }
+    #galleryModalHotelButton {
+      margin-top: 15px;
+      background-color: var(--primary-color, #1d4ed8); /* Usar variable si está definida o fallback */
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #galleryModalHotelButton:hover {
+      background-color: var(--accent-color, #3b82f6); /* Usar variable si está definida o fallback */
+    }
+
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    :target::before {
+      content: "";
+      display: block;
+      height: 80px; /* Altura aproximada de tu header */
+      margin-top: -80px; /* Negativo de la altura */
+      visibility: hidden;
+    }
+
+    .gallery-image-wrapper { /* Contenedor para la imagen de galería */
+        cursor: pointer;
+    }
+    .gallery-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .gallery-image:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  <header class="bg-white text-gray-800 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex items-center justify-between p-4">
+      <div class="flex items-center gap-3">
+        <img src="img/Captura_de_pantalla_2025-05-17_155959-removebg-preview.png" alt="Logo Hoteles El Poblado" class="h-20">
+        <span class="text-xl font-semibold text-primary">Hoteles El Poblado</span>
+      </div>
+      <nav class="hidden md:flex items-center gap-6 text-base font-medium">
+        <a href="#inicio" class="hover:text-primary transition duration-300">Inicio</a>
+        <a href="#quienes-somos" class="hover:text-primary transition duration-300">Nosotros</a>
+        <a href="#hoteles" class="hover:text-primary transition duration-300">Hoteles</a>
+        <a href="#galeria" class="hover:text-primary transition duration-300">Galería</a>
+        <a href="#contacto" class="hover:text-primary transition duration-300">Contacto</a>
+      </nav>
+      <div class="md:hidden">
+        <button id="mobile-menu-button" class="text-gray-800 p-2 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="md:hidden hidden bg-white shadow-md">
+        <a href="#inicio" class="block px-4 py-2 text-sm hover:bg-gray-100 hover:text-primary transition duration-300">Inicio</a>
+        <a href="#quienes-somos" class="block px-4 py-2 text-sm hover:bg-gray-100 hover:text-primary transition duration-300">Nosotros</a>
+        <a href="#hoteles" class="block px-4 py-2 text-sm hover:bg-gray-100 hover:text-primary transition duration-300">Hoteles</a>
+        <a href="#galeria" class="block px-4 py-2 text-sm hover:bg-gray-100 hover:text-primary transition duration-300">Galería</a>
+        <a href="#contacto" class="block px-4 py-2 text-sm hover:bg-gray-100 hover:text-primary transition duration-300">Contacto</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="inicio" class="relative overflow-hidden py-20 md:py-32 text-center bg-gradient-to-br from-blue-500 to-blue-800 text-white shadow-inner">
+      <div class="container mx-auto px-6 relative z-10">
+        <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">Explora Hoteles Exclusivos en <br class="hidden md:inline"> El Poblado, Medellín</h1>
+        <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto">Vive una experiencia inolvidable en Provenza, Manila y otros sectores vibrantes. Descubre alojamientos con rooftops espectaculares, diseño moderno y la mejor ubicación.</p>
+        <a href="#hoteles" class="mt-8 inline-block bg-white text-primary text-lg font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-gray-200 transition duration-300 transform hover:scale-105">Ver Hoteles Disponibles</a>
+      </div>
+    </section>
+
+    <section id="quienes-somos" class="py-16 px-6 max-w-5xl mx-auto text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-8">¿Quiénes somos?</h2>
+      <p class="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">Somos tu guía definitiva para encontrar el hotel perfecto en el corazón de El Poblado, Medellín. Nos especializamos en seleccionar alojamientos que ofrecen experiencias únicas: desde impresionantes rooftops con vistas panorámicas hasta acogedores hoteles boutique en las vibrantes zonas de Provenza, Manila y el Parque Lleras. Nuestra misión es facilitarte el descubrimiento del lugar ideal para tu estadía, asegurando confort, estilo y una ubicación privilegiada cerca de lo mejor que la ciudad tiene para ofrecer.</p>
+    </section>
+
+    <section id="hoteles" class="py-16 px-6 bg-gray-200">
+      <div class="container mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-10">Encuentra Tu Hotel Ideal</h2>
+
+        <div class="flex flex-wrap justify-center gap-4 mb-12">
+          <button class="filter-btn bg-primary text-white font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-blue-700 active" data-tag="all">Todos</button>
+          <button class="filter-btn bg-white text-gray-700 font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-gray-300" data-tag="rooftop">Con Rooftop</button>
+          <button class="filter-btn bg-white text-gray-700 font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-gray-300" data-tag="provenza">En Provenza</button>
+          <button class="filter-btn bg-white text-gray-700 font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-gray-300" data-tag="manila">En Manila</button>
+          <button class="filter-btn bg-white text-gray-700 font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-gray-300" data-tag="luxury">Lujo</button>
+          <button class="filter-btn bg-white text-gray-700 font-semibold px-6 py-2 rounded-full transition duration-300 hover:bg-gray-300" data-tag="business">Negocios</button>
+        </div>
+
+        <div id="hoteles-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="provenza rooftop" data-hotel-name="The Chartlee Hotel">
+            <img src="IMG/hoteles/provenza1.jpg" alt="Imagen Hotel Provenza Rooftop" class="w-full h-56 object-cover">
+            <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">The Charlee Hotel</h3>
+              <p class="text-gray-600 text-sm mb-4">Moderno hotel con terraza panorámica, ubicado en el corazón de Provenza, ideal para disfrutar de la vida nocturna y vistas espectaculares.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="provenza-rooftop">Ver detalles</button>
+            </div>
+          </div>
+
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="manila boutique" data-hotel-name="Manila Boutique Hotel">
+            <img src="IMG/hoteles/manila1.jpg" alt="Imagen Hotel Manila Boutique" class="w-full h-56 object-cover">
+            <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Manila Boutique Hotel</h3>
+              <p class="text-gray-600 text-sm mb-4">Estilo boutique encantador, ideal para parejas, con un ambiente tranquilo y cercano a excelentes opciones gastronómicas en Manila.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="manila-boutique">Ver detalles</button>
+            </div>
+          </div>
+
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="rooftop lleras" data-hotel-name="Hotel Parque Lleras">
+            <img src="IMG/hoteles/lleras1.jpg" alt="Imagen Hotel cerca Parque Lleras" class="w-full h-56 object-cover">
+            <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Hotel Parque Lleras</h3>
+              <p class="text-gray-600 text-sm mb-4">Ubicación inmejorable para la vida nocturna, cuenta con un vibrante bar en la azotea y piscina con vistas a la ciudad.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="parque-lleras">Ver detalles</button>
+            </div>
+          </div>
+
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="provenza rooftop luxury" data-hotel-name="Selvario 36">
+            <img src="IMG/hoteles/selvario36_main.jpg" alt="Imagen Hotel Selvario 36" class="w-full h-56 object-cover"> <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Selvario 36</h3>
+              <p class="text-gray-600 text-sm mb-4">Un oasis de diseño en Provenza, con un enfoque en la sostenibilidad y experiencias auténticas, ideal para el viajero moderno.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="selvario36">Ver detalles</button>
+            </div>
+          </div>
+
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="lleras business luxury" data-hotel-name="Hotel Diez">
+            <img src="IMG/hoteles/hotel_diez_main.jpeg" alt="Imagen Hotel Diez" class="w-full h-56 object-cover"> <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Hotel Diez</h3>
+              <p class="text-gray-600 text-sm mb-4">Combinación perfecta de lujo y conveniencia, con un diseño temático por piso que celebra la cultura colombiana.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="hotel-diez">Ver detalles</button>
+            </div>
+          </div>
+
+          <div class="hotel-card bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1" data-tags="provenza rooftop luxury" data-hotel-name="The Click Clack Hotel">
+            <img src="IMG/hoteles/clickclack_main.jpg" alt="Imagen The Click Clack Hotel" class="w-full h-56 object-cover"> <div class="p-5">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">The Click Clack Hotel</h3>
+              <p class="text-gray-600 text-sm mb-4">Un hotel vibrante y moderno con un diseño único, espacios de coworking y una animada vida social en su rooftop.</p>
+              <button class="open-modal-btn inline-block bg-accent text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600 transition duration-300" data-hotel-id="click-clack">Ver detalles</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="galeria" class="py-16 px-6">
+      <div class="container mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-10">Galería de Fotos</h2>
+        <p class="text-center text-gray-600 mb-8">Explora una selección de impresionantes fotos de interiores, exteriores y vistas de nuestros hoteles y del vibrante entorno de El Poblado.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_1.jpg', 'provenza-rooftop', 'The Chartlee Hotel')">
+            <img src="IMG/gallery/gallery_image_1.jpg" alt="Galería The Chartlee Hotel" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_2.jpg', 'manila-boutique', 'Manila Boutique Hotel')">
+            <img src="IMG/gallery/gallery_image_2.jpg" alt="Galería Manila Boutique Hotel" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_3.jpg', 'parque-lleras', 'Hotel Parque Lleras')">
+            <img src="IMG/gallery/gallery_image_3.jpg" alt="Galería Hotel Parque Lleras" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_4.jpg', 'selvario36', 'Selvario 36')">
+            <img src="IMG/gallery/gallery_image_4.jpg" alt="Galería Selvario 36" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_5.jpg', 'hotel-diez', 'Hotel Diez')">
+            <img src="IMG/gallery/gallery_image_5.jpg" alt="Galería Hotel Diez" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_6.jpg', 'click-clack', 'The Click Clack Hotel')">
+            <img src="IMG/gallery/gallery_image_6.jpg" alt="Galería The Click Clack Hotel" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_7.jpg', 'provenza-rooftop', 'Vista  del Chartlee')">
+            <img src="IMG/gallery/gallery_image_7.jpg" alt="Galería Vista El Poblado 1" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_8.jpg', 'hotel-diez', ' Interior Hotel Diez')">
+            <img src="IMG/gallery/gallery_image_8.jpg" alt="Galería Detalle Interior Hotel" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_9.jpg', 'provenza-rooftop', 'The Chartlee Hotel')">
+            <img src="IMG/gallery/gallery_image_9.jpg" alt="Galería The Chartlee Hotel Detalle" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_10.jpeg','parque-lleras', 'Ambiente Nocturno')">
+            <img src="IMG/gallery/gallery_image_10.jpeg" alt="Galería Ambiente Nocturno" class="gallery-image">
+          </div>
+           <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_11.jpg', 'manila-boutique', 'Manila Boutique Hotel')">
+            <img src="IMG/gallery/gallery_image_11.jpg" alt="Galería Manila Boutique Detalle" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_12.jpg', 'parque-lleras', 'Hotel Parque Lleras')">
+            <img src="IMG/gallery/gallery_image_12.jpg" alt="Galería Hotel Parque Lleras Habitaciones" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_13.jpg', 'selvario36', 'Selvario 36')">
+            <img src="IMG/gallery/gallery_image_13.jpg" alt="Galería Selvario 36 Exterior" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_14.jpg', 'hotel-diez', 'Hotel Diez')">
+            <img src="IMG/gallery/gallery_image_14.jpg" alt="Galería Hotel Diez Habitación" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_15.jpg', 'click-clack', 'The Click Clack Hotel')">
+            <img src="IMG/gallery/gallery_image_15.jpg" alt="Galería The Click Clack Hotel Rooftop" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_16.jpg','manila-boutique', 'Habitación Manila')">
+            <img src="IMG/gallery/gallery_image_16.jpg" alt="Galería Habitación Manila" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_17.jpg','selvario36', 'Lobby Selvario')">
+            <img src="IMG/gallery/gallery_image_17.jpg" alt="Galería Lobby Selvario" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_18.png', 'click-clack', 'Bar Del Click Clack')">
+            <img src="IMG/gallery/gallery_image_18.png" alt="Galería Bar Del Click Clack" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_19.jpg','parque-lleras', 'Recepcion Lleras')">
+            <img src="IMG/gallery/gallery_image_19.jpg" alt="Galería Recepcion Diez" class="gallery-image">
+          </div>
+          <div class="gallery-image-wrapper" onclick="openGalleryModal('IMG/gallery/gallery_image_20.jpg', 'provenza-rooftop', 'Rooftop del Chartlee')">
+            <img src="IMG/gallery/gallery_image_20.jpg" alt="Galería Rooftop del Chartlee" class="gallery-image">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacto" class="py-16 px-6 bg-primary text-white">
+      <div class="container mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-8">Contáctanos</h2>
+        <p class="text-lg max-w-2xl mx-auto">¿Tienes preguntas o necesitas ayuda para elegir el hotel perfecto? Ponte en contacto con nosotros.</p>
+        <p class="mt-8 text-xl font-semibold">info@hoteleselpoblado.com</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-gray-800 text-gray-300 py-8 px-6">
+    <div class="container mx-auto text-center text-sm">
+      <p>&copy; 2024 Hoteles El Poblado. Todos los derechos reservados.</p> <p class="mt-2">Diseñado con <span class="text-red-500">&hearts;</span> y Tailwind CSS</p>
+    </div>
+  </footer>
+
+  <div id="provenza-rooftop-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" data-modal-id="provenza-rooftop-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">The Charlee Hotel</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/provenza1.jpg" alt="Imagen Provenza Rooftop Hotel" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">Este moderno hotel en el corazón de Provenza es ideal para quienes buscan una experiencia vibrante y vistas espectaculares. Su rooftop es un punto de encuentro popular para disfrutar de cócteles y la vida nocturna de Medellín.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Rooftop bar con vistas panorámicas</li>
+            <li>Ubicación céntrica en Provenza</li>
+            <li>Diseño moderno y juvenil</li>
+            <li>Cercanía a restaurantes y bares</li>
+            <li>Ambiente social y animado</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Vistas impresionantes del barrio de Provenza y del skyline de El Poblado desde su terraza en la azotea.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/provenza_gal2.jpg" alt="Vista Provenza Rooftop 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/provenza_gal1.jpg" alt="Vista Provenza Rooftop 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://www.booking.com/hotel/co/the-charlee.es.html?aid=311839&label=slbn_-llHTZM_zQ7u8uZfl0ZwT%2AgS388477824362%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-24682539975%3Alp9208319%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZaN3e9Rle2iM&sid=85a961c011d1dcdbad1da9f403b1c8a6&all_sr_blocks=31132005_94153917_2_1_0_712324&checkin=2025-06-01&checkout=2025-06-02&dest_id=-592318&dest_type=city&dist=0&group_adults=2&group_children=0&hapos=1&highlighted_blocks=31132005_94153917_2_1_0_712324&hpos=1&matching_block_id=31132005_94153917_2_1_0_712324&no_rooms=1&req_adults=2&req_children=0&room1=A%2CA&sb_price_type=total&sr_order=popularity&sr_pri_blocks=31132005_94153917_2_1_0_712324_86400000&srepoch=1748354034&srpvid=f3a361b7f45402f8&type=total&ucfs=1&#tab-main" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300 close-modal-and-navigate">Consultar disponibilidad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="manila-boutique-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" data-modal-id="manila-boutique-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Manila Boutique Hotel</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/manila1.jpg" alt="Imagen Manila Boutique Hotel" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">Un encantador hotel boutique en el tranquilo barrio de Manila, ideal para parejas y aquellos que buscan un ambiente relajado. Ofrece un servicio personalizado y está rodeado de excelentes opciones gastronómicas.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Ambiente tranquilo y acogedor</li>
+            <li>Ideal para parejas y estancias de relax</li>
+            <li>Ubicación en el encantador barrio de Manila</li>
+            <li>Cercanía a cafeterías y restaurantes locales</li>
+            <li>Servicio personalizado y atento</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Vistas a las pintorescas calles de Manila, con sus árboles frondosos y arquitectura tradicional, ofreciendo una sensación de serenidad.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/manila_gal2.jpg" alt="Vista Manila Boutique 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/manila_gal1.jpg" alt="Vista Manila Boutique 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://www.online-reservations.com/?hotelid=7072684&format=simple&lang=es&gacc=gmcc&gad_source=1&gad_campaignid=21210318443&gbraid=0AAAAACsYb7mybhc4MdKEvMv4__x8TeWu0&gclid=Cj0KCQjwxdXBBhDEARIsAAUkP6hBy6yujWZB0PUgmIckp0sfZfMofAvLTMYl5YcGUQFDUdiChD8gVqsaAjXREALw_wcB" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300 close-modal-and-navigate">Consultar disponibilidad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="parque-lleras-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" data-modal-id="parque-lleras-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Hotel Parque Lleras</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/lleras1.jpg" alt="Imagen Hotel Parque Lleras" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">Con una ubicación inmejorable cerca del famoso Parque Lleras, este hotel es perfecto para quienes desean experimentar la animada vida nocturna de Medellín. Cuenta con un vibrante bar en la azotea y una piscina con vistas a la ciudad.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Ubicación estratégica cerca del Parque Lleras</li>
+            <li>Bar y piscina en la azotea</li>
+            <li>Ideal para la vida nocturna y el entretenimiento</li>
+            <li>Fácil acceso a transporte y atracciones</li>
+            <li>Ambiente dinámico y divertido</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Vistas espectaculares de la ciudad de Medellín, especialmente de noche, desde la piscina y el bar en la azotea. Algunas habitaciones también ofrecen vistas urbanas.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/lleras_gal2.jpg" alt="Vista Parque Lleras 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/lleras_gal1.jpg" alt="Vista Parque Lleras 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://llerasparkconcepthotel.com/Accomodation/" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300 close-modal-and-navigate">Consultar disponibilidad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="selvario36-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" data-modal-id="selvario36-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Selvario 36</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/selvario36_main.jpg" alt="Imagen Selvario 36" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">Un oasis de diseño en Provenza, con un enfoque en la sostenibilidad y experiencias auténticas, ideal para el viajero moderno. Selvario 36 ofrece un ambiente tranquilo y sofisticado, con un diseño que se inspira en la exuberante naturaleza colombiana.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Diseño único y ecológico</li>
+            <li>Ubicación privilegiada en Provenza</li>
+            <li>Ambiente tranquilo y relajante</li>
+            <li>Compromiso con la sostenibilidad</li>
+            <li>Servicio personalizado</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Vistas a los jardines interiores y a las calles arboladas de Provenza. Algunas habitaciones ofrecen balcones con un ambiente urbano pero sereno.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/selvario36_gal1.jpg" alt="Vista Selvario 36 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/selvario36_gal2.png" alt="Vista Selvario 36 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://selvario36hotel.com/bookingstep1.html?idtokenprovider=100377764&nights=1&clientCodeStrictSearch=true&parties=W3siYWR1bHRzIjoyLCJjaGlsZHJlbiI6W119XQ%3D%3D&lang=es&home=https%3A%2F%2Fselvario36hotel.com%2F&currency=USD&applyClubDiscount=true&deviceType=DESKTOP_TABLET&checkin=27%2F05%2F2025&hsri=02040&step=1&https%3A%2F%2Fbit.ly%2F4dXxyYE=&gad_source=1&gad_campaignid=21862256637&gbraid=0AAAAA9_GC4lZZoGJTspA_ncIhpdgsmjzF&gclid=Cj0KCQjwxdXBBhDEARIsAAUkP6gbA4X5xtgNtVz48wzEIU2PtojX9KjxHuNjP26QtNw1BLUHR88gX7AaAgV_EALw_wcB/" target="_blank" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300">Hacer Reserva </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hotel-diez-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" data-modal-id="hotel-diez-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Hotel Diez</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/hotel_diez_main.jpeg" alt="Imagen Hotel Diez" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">Hotel Diez ofrece una inmersión cultural, con cada piso dedicado a una región diferente de Colombia. Combina lujo y conveniencia con la autenticidad de la tradición colombiana, ideal para viajeros de negocios y placer.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Diseño temático cultural por piso</li>
+            <li>Spa y centro de bienestar</li>
+            <li>Ubicación estratégica cerca de negocios y ocio</li>
+            <li>Excelentes opciones gastronómicas</li>
+            <li>Servicio de alta calidad</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Vistas panorámicas de la ciudad de Medellín desde los pisos superiores. Algunas habitaciones ofrecen vistas hacia la vibrante zona de El Poblado.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/hotel_diez_gal1.jpg" alt="Vista Hotel Diez 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/hotel_diez_gal2.jpg" alt="Vista Hotel Diez 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://www.guestreservations.com/es/diez-hotel-categoria-colombia/booking?utm_source=google&utm_medium=cpc&utm_campaign=21828508204&gad_source=1&gad_campaignid=21828508204&gbraid=0AAAAADiMQMaA28PdgmnNZYahpkT37qpjX&gclid=Cj0KCQjwxdXBBhDEARIsAAUkP6g69sFNIfJrVDXEDsZwUXO6iEGth99mZBqYkB86cHCG82gbnteDAYIaAvjuEALw_wcB&ctTriggered=true/" target="_blank" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300">Visitar Sitio Web</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="click-clack-modal" class="modal">
+    <div class="modal-content">
+      <span class="closhttps://github.com/Alejozapata-2005/Hoteles-Poblado.gite-button" data-modal-id="click-clack-modal">&times;</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">The Click Clack Hotel</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img src="IMG/hoteles/clickclack_main.jpg" alt="Imagen The Click Clack Hotel" class="w-full h-auto rounded-lg shadow-md mb-4">
+          <p class="text-gray-700 leading-relaxed">The Click Clack Hotel es un hotel vibrante y moderno con un diseño único, espacios de coworking y una animada vida social en su rooftop. Es un punto de encuentro ideal para conectar y disfrutar de la vida urbana de El Poblado.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Ventajas y Atributos:</h3>
+          <ul class="list-disc list-inside text-gray-700 mb-4">
+            <li>Famoso rooftop bar con piscina y eventos</li>
+            <li>Diseño vanguardista y espacios de coworking</li>
+            <li>Ambiente social y vibrante</li>
+            <li>Opciones gastronómicas variadas</li>
+            <li>Ubicación privilegiada en Provenza</li>
+          </ul>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Vistas:</h3>
+          <p class="text-gray-700">Impresionantes vistas panorámicas de 360 grados de Medellín desde su rooftop, incluyendo el skyline de El Poblado y las montañas circundantes.</p>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <img src="IMG/hoteles/clickclack_gal1.jpg" alt="Vista Click Clack 1" class="w-full h-32 object-cover rounded-lg shadow-md">
+            <img src="IMG/hoteles/clickclack_gal2.jpg" alt="Vista Click Clack 2" class="w-full h-32 object-cover rounded-lg shadow-md">
+          </div>
+          <a href="https://www.clickclackhotel.com/es/hoteles/colombia/medellin/clickclackmedellin/?partner=8418&gad_source=1&gad_campaignid=21671474845&gbraid=0AAAAAo7JeDbk4C6BnAjRIyuqlRqTIP5Eh&gclid=Cj0KCQjwxdXBBhDEARIsAAUkP6j0KzvXamQ7lsPZ6UwyTlh8fSjPnULBRQ_rYXXWsNIDFrrQ74i-TL0aAvobEALw_wcB/" target="_blank" class="mt-4 inline-block bg-primary text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-300">Visitar Sitio Web</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="galleryModal" class="gallery-modal">
+    <span id="galleryModalClose" class="gallery-modal-close-button">&times;</span>
+    <div class="gallery-modal-content">
+      <img src="" alt="Imagen de Galería Ampliada" id="galleryModalImage">
+      <button id="galleryModalHotelButton" data-hotel-id="">Ver Hotel</button>
+    </div>
+  </div>
+
+
+  <script>
+    // Script para el filtrado de hoteles
+    function filterHoteles(tag) {
+      const cards = document.querySelectorAll('.hotel-card');
+      cards.forEach(card => {
+        const tags = card.getAttribute('data-tags');
+        if (tag === 'all' || (tags && tags.includes(tag))) {
+          card.style.display = ''; // O la forma en que Tailwind los muestra, ej. card.classList.remove('hidden')
+        } else {
+          card.style.display = 'none'; // O card.classList.add('hidden')
+        }
+      });
+    }
+    
+    // Variables para el modal de la galería
+    const galleryModal = document.getElementById('galleryModal');
+    const galleryModalImage = document.getElementById('galleryModalImage');
+    const galleryModalCloseButton = document.getElementById('galleryModalClose');
+    const galleryModalHotelButton = document.getElementById('galleryModalHotelButton');
+    let currentGalleryHotelId = null;
+
+    function openGalleryModal(imageSrc, hotelId, hotelName) {
+        galleryModalImage.src = imageSrc;
+        galleryModalImage.alt = `Imagen ampliada de ${hotelName || 'Galería'}`;
+        currentGalleryHotelId = hotelId; // Guardar el hotelId para el botón
+
+        if (hotelId && hotelName) {
+            galleryModalHotelButton.textContent = `Ver Detalles de ${hotelName}`;
+            galleryModalHotelButton.style.display = 'inline-block';
+        } else if (hotelName) { // Si solo hay nombre (ej. "Vista El Poblado") pero no ID de hotel
+            galleryModalHotelButton.textContent = `Más sobre ${hotelName}`;
+             galleryModalHotelButton.style.display = 'none'; // Ocultamos si no hay acción clara
+        }
+        else {
+            galleryModalHotelButton.style.display = 'none';
+        }
+        
+        galleryModal.classList.add('open');
+        document.body.style.overflow = 'hidden'; // Evitar scroll en el body
+    }
+
+    function closeGalleryModal() {
+        galleryModal.classList.remove('open');
+        document.body.style.overflow = ''; // Restaurar scroll
+    }
+
+    galleryModalCloseButton.addEventListener('click', closeGalleryModal);
+    galleryModal.addEventListener('click', function(event) {
+        // Cerrar si se hace clic en el fondo oscuro (fuera del gallery-modal-content)
+        if (event.target === galleryModal) {
+            closeGalleryModal();
+        }
+    });
+
+    galleryModalHotelButton.addEventListener('click', function() {
+        if (currentGalleryHotelId) {
+            closeGalleryModal();
+            const hotelModalToOpen = document.getElementById(`${currentGalleryHotelId}-modal`);
+            if (hotelModalToOpen) {
+                hotelModalToOpen.classList.add('open');
+                document.body.style.overflow = 'hidden'; // Evitar scroll para el modal de hotel
+            } else {
+                // Si no hay modal específico, podría redirigir a #hoteles o mostrar un mensaje.
+                // Por ahora, solo cerramos el modal de galería.
+                console.warn(`No se encontró el modal para el hotel ID: ${currentGalleryHotelId}-modal`);
+                window.location.hash = "hoteles"; // Fallback a la sección de hoteles
+            }
+        }
+    });
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterButtons = document.querySelectorAll('.filter-btn');
+      const openModalButtons = document.querySelectorAll('.open-modal-btn');
+      const closeModalButtons = document.querySelectorAll('.close-button'); // Para modales de hotel
+      const allHotelModals = document.querySelectorAll('.modal'); // Todos los modales de hotel
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      // Menú móvil
+      if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        // Cerrar menú móvil al hacer clic en un enlace
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+      }
+
+
+      filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          filterButtons.forEach(btn => {
+            btn.classList.remove('active', 'bg-primary', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-700');
+          });
+          this.classList.add('active', 'bg-primary', 'text-white');
+          this.classList.remove('bg-white', 'text-gray-700');
+          filterHoteles(this.getAttribute('data-tag'));
+        });
+      });
+
+      // Manejo de la apertura de modales de HOTEL
+      openModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const hotelId = this.getAttribute('data-hotel-id');
+          const modalToOpen = document.getElementById(`${hotelId}-modal`);
+          if (modalToOpen) {
+            modalToOpen.classList.add('open');
+            document.body.style.overflow = 'hidden';
+          }
+        });
+      });
+
+      // Manejo del cierre de modales de HOTEL
+      closeModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const modalId = this.getAttribute('data-modal-id'); // Usamos el data-modal-id que pusimos en el span
+          const modalToClose = document.getElementById(modalId);
+          if (modalToClose) {
+            modalToClose.classList.remove('open');
+            // Solo restaurar scroll si no hay OTRO modal abierto (ej. galería)
+            const anyModalOpen = Array.from(document.querySelectorAll('.modal.open, .gallery-modal.open')).length > 0;
+            if (!anyModalOpen) {
+                 document.body.style.overflow = '';
+            }
+          }
+        });
+      });
+      
+      // Cierre del modal de HOTEL al hacer clic fuera del contenido
+      allHotelModals.forEach(hotelModal => {
+        hotelModal.addEventListener('click', function(event) {
+          if (event.target === hotelModal) { // Si el clic fue en el fondo del modal
+            hotelModal.classList.remove('open');
+            const anyModalOpen = Array.from(document.querySelectorAll('.modal.open, .gallery-modal.open')).length > 0;
+            if (!anyModalOpen) {
+                 document.body.style.overflow = '';
+            }
+          }
+        });
+      });
+
+      // Para los botones "Consultar disponibilidad" que deben cerrar el modal y navegar
+      document.querySelectorAll('.close-modal-and-navigate').forEach(link => {
+        link.addEventListener('click', function(event) {
+            const modal = this.closest('.modal');
+            if (modal) {
+                modal.classList.remove('open');
+                const anyModalOpen = Array.from(document.querySelectorAll('.modal.open, .gallery-modal.open')).length > 0;
+                if (!anyModalOpen) {
+                    document.body.style.overflow = '';
+                }
+            }
+            // La navegación al href="#contacto" ocurrirá normalmente.
+        });
+      });
+
+      filterHoteles('all'); // Mostrar todos los hoteles al cargar la página
+
+       // Inicializar Tailwind CSS variables para CSS (si es necesario)
+       const tailwindColors = tailwind.config.theme.extend.colors;
+        document.documentElement.style.setProperty('--primary-color', tailwindColors.primary);
+        document.documentElement.style.setProperty('--accent-color', tailwindColors.accent);
+
+    });
+  </script>
+</body>
+</html>

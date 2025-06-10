@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Título que aparece en la pestaña -->
+  <title>Hoteles El Poblado Medellín | Rooftop & Boutique</title>
+  
+  <!-- Ícono favicon -->
+  <link rel="icon" href="IMG/favicon.ico" type="image/png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -180,8 +194,36 @@
     .foto{
       background-image: url(img/medellin-el-poblado-scaled.jpeg);
     }
+    @keyframes vibrate {
+    0%, 100% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(2px, -2px); }
+    60% { transform: translate(-2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+  }
+
+  .animate-vibrate {
+    animation: vibrate 0.4s infinite;
+  }
   </style>
 </head>
+<a href="https://www.instagram.com/hoteles_poblado?igsh=MTA4bzZhYzBqeW01eQ==" target="_blank"
+   class="fixed bottom-6 right-6 bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500 text-white p-4 rounded-full shadow-lg hover:opacity-90 transition animate-bounce z-50"
+   aria-label="Instagram">
+  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5a4.25 4.25 0 004.25-4.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.88a.88.88 0 110 1.75.88.88 0 010-1.75z"/>
+  </svg>
+</a>
+
+<!-- Ícono flotante de Facebook (vibración) -->
+<a href="https://www.facebook.com/profile.php?id=61577285848077" target="_blank"
+   class="fixed bottom-20 right-6 bg-blue-700 text-white p-4 rounded-full shadow-lg hover:bg-blue-800 transition animate-vibrate z-50"
+   aria-label="Facebook">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M22 12a10 10 0 10-11.63 9.88v-6.99h-2.8v-2.89h2.8V9.41c0-2.76 1.64-4.29 4.14-4.29 1.2 0 2.46.21 2.46.21v2.7h-1.39c-1.37 0-1.8.85-1.8 1.73v2.08h3.06l-.49 2.89h-2.57v6.99A10.02 10.02 0 0022 12z"/>
+  </svg>
+</a>
+
 <body class="bg-gray-100 text-gray-800 font-sans">
 
   <header class="bg-white text-gray-800 shadow-lg sticky top-0 z-50">
@@ -218,7 +260,7 @@
   <div class="container mx-auto px-6 relative z-10 hotel">
     <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">Explora Hoteles Exclusivos en <br class="hidden md:inline"> El Poblado, Medellín</h1>
     <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto">Vive una experiencia inolvidable en Provenza, Manila y otros sectores vibrantes. Descubre alojamientos con rooftops espectaculares, diseño moderno y la mejor ubicación.</p>
-    <a href="#hoteles" class="mt-8 inline-block bg-white text-primary text-lg font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-gray-200 transition duration-300 transform hover:scale-105">Ver Hoteles Disponibles</a>
+    <a href="#hoteles" class="mt-8 inline-block bg-white text-primary text-lg font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-gray-200 transition duration-300 transform hover:scale-105">Ver Hoteles Disponibles </a>
   </div>
 </section>
 
@@ -376,8 +418,10 @@
 
   <footer class="bg-gray-800 text-gray-300 py-8 px-6">
     <div class="container mx-auto text-center text-sm">
-      <p>&copy; 2025 Hoteles El Poblado. Todos los derechos reservados.</p> <p class="mt-2"> <span class="text-red-500">&hearts;</span> </p>
+      <p>&copy; 2025 Hoteles El Poblado. Todos los derechos reservados.       alejo zapata</p> <p class="mt-2"> <span class="text-red-500">&hearts;</span> </p>
     </div>
+    
+    
   </footer>
 
   <div id="provenza-rooftop-modal" class="modal">
